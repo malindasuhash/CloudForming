@@ -1,0 +1,32 @@
+{
+    "Resources" : {
+        "Ec2Instance" : {
+            "Type" : "AWS::EC2::Instance",
+            "Properties" : {
+                "SecurityGroups" : [{
+                    "Ref" : "SecGroup"
+                }],
+                "KeyName" : "AmazonAMIKeyPair",
+                "ImageId" : "ami-751fb006"
+            }
+        },
+        "SecGroup" : {
+            "Type" : "AWS::EC2::SecurityGroup",
+            "Properties" : {
+                "GroupDescription" : "Created using CF",                
+                "SecurityGroupIngress" : {
+                   "CidrIp" : "0.0.0.0/0",
+                   "FromPort" : "22",
+                   "ToPort" : "24",
+                   "IpProtocol" : "tcp" 
+                },
+                "Tags" : [
+                    {
+                        "Key" : "Sec1",
+                        "Value" : "CF created"
+                    }
+                ]
+            }
+        }
+    }
+}
