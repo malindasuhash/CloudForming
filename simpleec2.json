@@ -1,13 +1,48 @@
 {
+    "Parameters" : {
+        "KeyName" : {
+            "Description" : "Name of the key to use for EC2",
+            "Type" : "AWS::EC2::KeyPair::KeyName"
+        },
+        "Username" : {
+            "Type" : "String",
+            "Description" : "Username of a resource",
+            "MinLength" : "4",
+            "MaxLength" : "10",
+            "NoEcho" : "false"
+        },
+        "NumberOfInstances" : {
+            "Type" : "Number",
+            "Description" : "Number of Ec2 instances",
+            "Default" : "2"
+        }
+    },
+    
+    "Mappings" : {
+      "RegionSpecifics" : {
+          "eu-west-1" : {
+              "AMI" : "ami-751fb006"
+          },
+          "eu-central-1" : {
+              "AMI" : "ami-751fb006"
+          }
+      }  
+    },
+    
     "Resources" : {
+        "MyBucket" : {
+          "Type" : "AWS::S3::Bucket"  
+        },
         "Ec2Instance" : {
             "Type" : "AWS::EC2::Instance",
             "Properties" : {
                 "SecurityGroups" : [{
                     "Ref" : "SecGroup"
                 }],
-                "KeyName" : "AmazonAMIKeyPair",
-                "ImageId" : "ami-751fb006"
+                "KeyName" : {"Ref" : "KeyName"},
+                "ImageId" : { "Fn::FindInMap" : ["RegionSpecifics", {
+                    "Ref" : "AWS::Region"
+                 }, "AMI"] }
             }
         },
         "SecGroup" : {
@@ -27,6 +62,15 @@
                     }
                 ]
             }
+        }
+    },
+    
+    "Outputs" : {        
+        "MyName" : { 
+            "Value" : {
+                "Fn::Join" : [",", ["Malinda", "Suhash"]]
+            },
+            "Description" : "Prove that join works"    
         }
     }
 }
