@@ -82,7 +82,11 @@
             "packages" : {
               "yum" : {
                 "httpd"             : [],
-                "php"               : []
+                "php"               : [],
+                "php-mysql" : [],
+                "mysql-server" : [],
+                "mysql-libs" : [],
+                "mysql" : []
               }
             },
 
@@ -91,8 +95,8 @@
               "/var/www/html/index.php" : {
                 "content" : { "Fn::Join" : ["", [
                   "<?php\n",
-                  "echo '<h1>AWS CloudFormation sample PHP application</h1>';\n",
-                  "echo 'Updated version via Update stack!';\n",
+                  "echo '<h1>AWS CloudFormation sample PHP application 1</h1>';\n",
+                  "echo 'Updated now version via Update stack!';\n",
                   "?>\n"
                 ]]},
                 "mode"    : "000644",
@@ -127,6 +131,7 @@
             "services" : {
               "sysvinit" : {
                 "httpd"    : { "enabled" : "true", "ensureRunning" : "true" },
+                "mysqld" : { "enabled": "true", "ensureRunning" : "true" },
                 "cfn-hup" : { "enabled" : "true", "ensureRunning" : "true",
                     "files" : ["/etc/cfn/cfn-hup.conf", "/etc/cfn/hooks.d/cfn-auto-reloader.conf"]}
               }
