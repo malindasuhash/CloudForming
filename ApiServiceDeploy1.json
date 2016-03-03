@@ -1,0 +1,19 @@
+{
+    "Parameters" : {
+      "Ec2Image" : {
+          "Type" : "String",
+          "Description" : "Defines the name of the image",
+          "Default" : "ami-751fb006"
+      }
+    },
+    "Resources" : {
+        "ApiServiceInstance" : {
+            "Type" : "AWS::EC2::Instance",
+            "Properties" : {
+                "ImageId" : { "Ref" : "Ec2Image" },
+                "InstanceType" : "T2.Micro"    
+            }
+            
+        }
+    }
+}
