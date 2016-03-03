@@ -2,8 +2,16 @@
     "Parameters" : {
       "Ec2Image" : {
           "Type" : "String",
-          "Description" : "Defines the name of the image",
+          "Description" : "Defines the name of the image (AMI)",
           "Default" : "ami-751fb006"
+      },
+      "KeyName" : {
+          "Type" : "AWS::EC2::KeyPair::KeyName",
+          "Description" : "Key used to launch the instance"
+      },
+      "AvailabilityZones" : {
+          "Type" : "List<AWS::EC2::AvailabilityZone::Name>",
+          "Description" : "Where to launch the instance"
       }
     },
     "Resources" : {
@@ -11,7 +19,9 @@
             "Type" : "AWS::EC2::Instance",
             "Properties" : {
                 "ImageId" : { "Ref" : "Ec2Image" },
-                "InstanceType" : "T2.Micro"    
+                "InstanceType" : "T2.Micro",
+                "KeyName" : { "Ref" : "KeyName" },
+                "AvailabilityZone" : { "Ref" : "AvailabilityZones" }    
             }
             
         }
