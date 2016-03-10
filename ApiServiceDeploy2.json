@@ -1,0 +1,82 @@
+{
+    "Parameters" : {
+      "KeyName" : {
+          "Type" : "AWS::EC2::KeyPair::KeyName",
+          "Description" : "Key used to launch the instance"
+      },
+      "AvailabilityZones" : {
+          "Type" : "AWS::EC2::AvailabilityZone::Name",
+          "Description" : "Where to launch the instance"
+      }
+    },
+    
+    "Mappings" : {
+        "SupportedRegions" : {
+            "eu-west-1" : {
+                "AMI" : "ami-751fb006"
+            }
+        }  
+    },
+    
+    "Resources" : {        
+        "S3FullAccessRole" : {
+          "Type" : "AWS::IAM::Role",
+          "Properties" : {
+              "AssumeRolePolicyDocument" : {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                        "Effect": "Allow",
+                        "Action": [ "sts:AssumeRole" ],
+                        "Principal": {"Service": "ec2.amazonaws.com"}
+                        }
+                    ]
+                    },
+               "Path" : "/",
+               "Policies" : [{
+                   "PolicyName" : "S3",
+                   "PolicyDocument" : {
+                        "Version": "2012-10-17",
+                        "Statement": [
+                            {
+                            "Effect": "Allow",
+                            "Action": "s3:*",
+                            "Resource": "*"
+                            }
+                        ]
+                        }
+               }]
+          }
+        },
+        
+        "ApiServiceInstance" : {
+            "Type" : "AWS::EC2::Instance",
+            "Properties" : {
+                "ImageId" : { "Fn::FindInMap" : [ "SupportedRegions", { "Ref" : "AWS::Region" }, "AMI" ] },
+                "InstanceType" : "t2.micro",
+                "KeyName" : { "Ref" : "KeyName" },
+                "AvailabilityZone" : { "Ref" : "AvailabilityZones" },
+                "SecurityGroups" : ["SimpleApiSecGroup"],
+                "IamInstanceProfile" : "S3_Access",
+                "UserData" : { "Fn::Base64" : { "Fn::Join" : [ "", [ 
+                "<powershell>\n", 
+                "aws s3 cp s3://simpleapistartup/ c://deployment/ --recursive\n",
+                "cd c:\\Deployment\n",
+                ".\\ApiService.deploy.cmd /Y -enableRule:DoNotDelete\n",
+                "</powershell>" ]] } }    
+            }
+            
+        }
+    },
+    "Outputs" : {
+        "ServiceEndPoint" : {
+            "Description" : "Service endpoint",
+            "Value" : { "Fn::Join" : [ "", [
+                        "http://", 
+                        { "Fn::GetAtt" : [ "ApiServiceInstance", "PublicDnsName" ] }, 
+                            ":88", 
+                            "/api",
+                            "/products"]] }
+                        }
+        }
+}
