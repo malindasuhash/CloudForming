@@ -7,6 +7,17 @@
       "AvailabilityZones" : {
           "Type" : "AWS::EC2::AvailabilityZone::Name",
           "Description" : "Where to launch the instance"
+      },
+      "VPC" : {
+          "Type" : "String",
+          "Description" : "Which VPC to deploy?",
+          "Default" : "vpc-663c9c03"
+      },
+      "InstanceType" : {
+          "Type" : "String",
+          "Description" : "Instance type to use?",
+          "Default" : "t2.micro",
+          "AllowedValues" : [ "t2.micro", "m1.small" ]
       }
     },
     
@@ -57,14 +68,33 @@
             }
         },
         
+        "InstanceSecurityGroup" : {
+            "Type" : "AWS::EC2::SecurityGroup",
+            "Properties" : {
+                "GroupDescription" : "Security group for simple api service",
+                "SecurityGroupIngress" : [{
+                    "CidrIp" : "0.0.0.0/0",
+                    "FromPort" : 3389,
+                    "IpProtocol" : "tcp",
+                    "ToPort" : "3389"
+                }, {
+                    "CidrIp" : "0.0.0.0/0",
+                    "FromPort" : 88,
+                    "IpProtocol" : "tcp",
+                    "ToPort" : "88"
+                }],
+                "VpcId" : { "Ref" : "VPC" }
+            }  
+        },
+        
         "ApiServiceInstance" : {
             "Type" : "AWS::EC2::Instance",
             "Properties" : {
                 "ImageId" : { "Fn::FindInMap" : [ "SupportedRegions", { "Ref" : "AWS::Region" }, "AMI" ] },
-                "InstanceType" : "t2.micro",
+                "InstanceType" : { "Ref" : "InstanceType" },
                 "KeyName" : { "Ref" : "KeyName" },
                 "AvailabilityZone" : { "Ref" : "AvailabilityZones" },
-                "SecurityGroups" : ["SimpleApiSecGroup"],
+                "SecurityGroups" : [ "sg-54234830" ],
                 "IamInstanceProfile" : { "Ref" : "InstanceProfileRoleInfo" },
                 "UserData" : { "Fn::Base64" : { "Fn::Join" : [ "", [ 
                 "<powershell>\n", 
@@ -85,6 +115,10 @@
                             ":88", 
                             "/api",
                             "/products"]] }
-                        }
+                        },
+           "SecurityGroupId" : {
+               "Description" : "Group Id of the security group",
+               "Value" : { "Fn::GetAtt" : [ "InstanceSecurityGroup", "GroupId" ] }
+           }
         }
 }
