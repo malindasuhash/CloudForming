@@ -1,0 +1,128 @@
+{
+    "Parameters" : {
+      "KeyName" : {
+          "Type" : "AWS::EC2::KeyPair::KeyName",
+          "Description" : "Key used to launch the instance"
+      },
+      "AvailabilityZones" : {
+          "Type" : "AWS::EC2::AvailabilityZone::Name",
+          "Description" : "Where to launch the instance"
+      },
+      "VPC" : {
+          "Type" : "String",
+          "Description" : "Which VPC to deploy?",
+          "Default" : "vpc-663c9c03"
+      },
+      "InstanceType" : {
+          "Type" : "String",
+          "Description" : "Instance type to use?",
+          "Default" : "t2.micro",
+          "AllowedValues" : [ "t2.micro", "m1.small" ]
+      }
+    },
+    
+    "Mappings" : {
+        "SupportedRegions" : {
+            "eu-west-1" : {
+                "AMI" : "ami-751fb006"
+            }
+        }  
+    },
+    
+    "Resources" : {        
+        "S3FullAccessRole" : {
+          "Type" : "AWS::IAM::Role",
+          "Properties" : {
+              "AssumeRolePolicyDocument" : {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                        "Effect": "Allow",
+                        "Action": [ "sts:AssumeRole" ],
+                        "Principal": {"Service": "ec2.amazonaws.com"}
+                        }
+                    ]
+                    },
+               "Path" : "/",
+               "Policies" : [{
+                   "PolicyName" : "S3",
+                   "PolicyDocument" : {
+                        "Version": "2012-10-17",
+                        "Statement": [
+                            {
+                            "Effect": "Allow",
+                            "Action": "s3:*",
+                            "Resource": "*"
+                            }
+                        ]
+                        }
+               }]
+          }
+        },
+        
+        "InstanceProfileRoleInfo" : {
+            "Type" : "AWS::IAM::InstanceProfile",
+            "Properties" : {
+                "Path" : "/",
+                "Roles" : [{ "Ref" : "S3FullAccessRole" }]
+            }
+        },
+        
+        "InstanceSecurityGroup" : {
+            "Type" : "AWS::EC2::SecurityGroup",
+            "Properties" : {
+                "GroupDescription" : "Security group for simple api service",
+                "SecurityGroupIngress" : [{
+                    "CidrIp" : "0.0.0.0/0",
+                    "FromPort" : 3389,
+                    "IpProtocol" : "tcp",
+                    "ToPort" : "3389"
+                }, {
+                    "CidrIp" : "0.0.0.0/0",
+                    "FromPort" : 88,
+                    "IpProtocol" : "tcp",
+                    "ToPort" : "88"
+                }],
+                "VpcId" : { "Ref" : "VPC" }
+            }  
+        },
+        
+        "ApiServiceInstance" : {
+            "Type" : "AWS::EC2::Instance",
+            "Properties" : {
+                "ImageId" : { "Fn::FindInMap" : [ "SupportedRegions", { "Ref" : "AWS::Region" }, "AMI" ] },
+                "InstanceType" : { "Ref" : "InstanceType" },
+                "KeyName" : { "Ref" : "KeyName" },
+                "AvailabilityZone" : { "Ref" : "AvailabilityZones" },
+                "SecurityGroupIds" : [ { "Fn::GetAtt" : [ "InstanceSecurityGroup", "GroupId" ] } ],
+                "IamInstanceProfile" : { "Ref" : "InstanceProfileRoleInfo" },
+                "UserData" : { "Fn::Base64" : { "Fn::Join" : [ "", [ 
+                "<powershell>\n", 
+                "aws s3 cp s3://simpleapistartup/ c://deployment/ --recursive\n",
+                "cd c:\\Deployment\n",
+                ".\\ApiService.deploy.cmd /Y -enableRule:DoNotDelete\n",
+                "</powershell>" ]] } }    
+            }
+            
+        }
+    },
+    "Outputs" : {
+        "ServiceEndPoint" : {
+            "Description" : "Service endpoint",
+            "Value" : { "Fn::Join" : [ "", [
+                        "http://", 
+                        { "Fn::GetAtt" : [ "ApiServiceInstance", "PublicDnsName" ] }, 
+                            ":88", 
+                            "/api",
+                            "/products"]] }
+                        },
+           "SecurityGroupId" : {
+               "Description" : "Group Id of the security group",
+               "Value" : { "Fn::GetAtt" : [ "InstanceSecurityGroup", "GroupId" ] }
+           },
+           "Role" : {
+               "Description" : "Role created and used by the template",
+               "Value" : { "Fn::GetAtt" : [ "S3FullAccessRole", "Arn" ] }
+           }
+        }
+}
