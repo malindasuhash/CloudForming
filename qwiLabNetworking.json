@@ -23,8 +23,8 @@
             "m1.medium" : { "Arch" : "64" }
         },
         "AWSRegionArch2AMI" : {
-            "us-west-1" : { "64" : "ami-d1f482b1" },
-            "us-west-2" : { "64" : "ami-63b25203" }
+            "us-west-1" : { "64" : "ami-1d2b2958" },
+            "us-west-2" : { "64" : "ami-030f4133" }
         }
     },
     
@@ -225,7 +225,7 @@
             "Type" : "AWS::EC2::SubnetNetworkAclAssociation",
             "Properties" : {
                 "SubnetId" : { "Ref" : "PublicSubnet1" },
-                "NetworkAclId" : "PublicSubnetAcl"
+                "NetworkAclId" : { "Ref" : "PublicSubnetAcl" }
             }
         },
         
@@ -233,7 +233,7 @@
             "Type" : "AWS::EC2::SubnetNetworkAclAssociation",
             "Properties" : {
                 "SubnetId" : { "Ref" : "PublicSubnet2" },
-                "NetworkAclId" : "PublicSubnetAcl"
+                "NetworkAclId" : { "Ref" : "PublicSubnetAcl" }
             }
         },
         
@@ -241,7 +241,7 @@
             "Type" : "AWS::EC2::SubnetNetworkAclAssociation",
             "Properties" : {
                 "SubnetId" : { "Ref" : "PrivateSubnet1" },
-                "NetworkAclId" : "PrivateSubnetAcl"
+                "NetworkAclId" : { "Ref" : "PrivateSubnetAcl" }
             }
         },
         
@@ -249,7 +249,7 @@
             "Type" : "AWS::EC2::SubnetNetworkAclAssociation",
             "Properties" : {
                 "SubnetId" : { "Ref" : "PrivateSubnet2" },
-                "NetworkAclId" : "PrivateSubnetAcl"
+                "NetworkAclId" : { "Ref" : "PrivateSubnetAcl" }
             }
         },
         
@@ -263,6 +263,48 @@
                 "DisableApiTermination" : "true",
                 "SecurityGroupIds" : [ { "Ref" : "NATSecurityGroup" } ]
             }
+        },
+        
+        "NATIP" : {
+            "Type" : "AWS::EC2::EIP",
+            "Properties" : {
+                "Domain" : "vpc",
+                "InstanceId" : { "Ref" : "NAT" }
+            }
+        },
+        
+        "NATSecurityGroup" : {
+            "Type" : "AWS::EC2::SecurityGroup",
+            "Properties" : {
+                "GroupDescription" : "Security group for NAT",
+                "VpcId" : { "Ref" : "VPC" },
+                "SecurityGroupIngress" : [{ "IpProtocol" : "-1", "FromPort" : "1", "ToPort" : "65535", "SourceSecurityGroupId" : { "Ref" : "PrivateSG" } }, { "IpProtocol" : "icmp", "FromPort" : "-1", "ToPort" : "-1", "SourceSecurityGroupId" : { "Ref" : "PrivateSG" } }]
+            }
+        },
+        
+        "PrivateSG" : {
+            "Type" : "AWS::EC2::SecurityGroup",
+            "Properties" : {
+                "GroupDescription" : "Private security group for NAT instance",
+                "VpcId" : { "Ref" : "VPC" },
+                "SecurityGroupIngress" : [ { "IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "CidrIp" : "0.0.0.0/0" }, { "IpProtocol" : "tcp", "FromPort" : "3389", "ToPort" : "3389", "CidrIp" : "0.0.0.0/0" }, { "IpProtocol" : "icmp", "FromPort" : "-1", "ToPort" : "-1", "CidrIp" : "0.0.0.0/0" } ]
+            }
+        },
+        
+        "BastianSG" : {
+            "Type" : "AWS::EC2::SecurityGroup",
+            "Properties" : {
+                "GroupDescription" : "Bastian security group",
+                "VpcId" : { "Ref" : "VPC" },
+                "SecurityGroupIngress" : [ { "IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "CidrIp" : { "Ref" : "CorpotateCidrIP" } }, { "IpProtocol" : "tcp", "FromPort" : "3389", "ToPort" : "3389", "CidrIp" : { "Ref" : "CorpotateCidrIP" } }, { "IpProtocol" : "icmp", "FromPort" : "-1", "ToPort" : "-1", "CidrIp" : { "Ref" : "CorpotateCidrIP" } } ]
+            }
+        }
+    },
+    
+    "Outputs" : {
+        "VPCInfo" : {
+            "Description" : "VPC",
+            "Value" : { "Ref" : "VPC" }
         }
     }
 }
