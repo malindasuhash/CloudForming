@@ -1,0 +1,39 @@
+{
+    "AWSTemplateFormatVersion" : "2010-09-09",
+    "Description" : "Launching multiple subnets in a VPC",
+   
+    "Parameters" : {
+        "NATInstanceType" : {
+            "Type" : "String",
+            "Description" : "Instance type of the NAT instance",
+            "Default" : "m1.small",
+            "AllowedValues" : [ "m1.small", "m1.medium" ]
+        },
+        
+        "CorpotateCidrIP" : {
+          "Type" : "String",
+          "Description" : "Traffic restictions",
+          "Default" : "0.0.0.0/0"  
+        }
+    },
+    
+    "Mappings" : {
+        "AWSInstanceType2Arc" : {
+            "m1.small" : { "Arch" : "64" },
+            "m1.medium" : { "Arch" : "64" }
+        },
+        "AWSRegionArch2AMI" : {
+            "us-west-1" : { "64" : "ami-d1f482b1" },
+            "us-west-2" : { "64" : "ami-63b25203" }
+        }
+    },
+    
+    "Resources" :  {
+        "VPC" : {
+            "Type" : "AWS::EC2::VPC",
+            "Properties" : {
+                "CidrBlock" : "10.0.0.0/16"
+            }
+        }
+    }
+}
