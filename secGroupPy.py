@@ -9,4 +9,7 @@ try:
  conn.close()
  
  for sg in currentSgs
-  print "id: ", sg.id
+  print "id:\t\t", sg.id
+  print "name:\t\t", sg.name
+  print "vpc:\t\t", sg.vpc_id
+  print "instance:\t", sg.instances()
